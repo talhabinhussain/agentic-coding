@@ -24,6 +24,48 @@ Before writing any code, write a short plan covering:
 
 Save this plan as a short section at the top of `spec/01-database-setup.md` (append below this instruction, or in a `## Plan` section) before moving to implementation.
 
+## Plan
+
+### 1. Exact Files to Create/Modify
+- **`pyproject.toml`**: Add `passlib` (with `bcrypt` scheme) and `bcrypt` dependencies.
+- **`app/models.py`**: Implement the `User` SQLModel.
+- **`app/database.py`**: Configure the SQLite database engine, session retrieval, and tables creation.
+- **`app/security.py`**: Define password hashing and verification utilities.
+- **`app/seed.py`**: Script to safely seed dummy users.
+
+### 2. User Model Schema Implementation
+We will implement the `User` model using `SQLModel` with the following attributes:
+- `id`: `Optional[int] = Field(default=None, primary_key=True)` (auto-generated primary key)
+- `name`: `str` (required)
+- `email`: `str = Field(unique=True, index=True)` (required, unique, indexed)
+- `password`: `str` (required, stores bcrypt-hashed password)
+- `is_employed`: `bool = Field(default=False)` (required, defaults to `False`)
+
+### 3. Password Hashing Strategy
+We will use `passlib.context.CryptContext` with the `bcrypt` hashing scheme in `app/security.py`:
+- `get_password_hash(password: str) -> str` uses `pwd_context.hash(password)`.
+- `verify_password(plain_password: str, hashed_password: str) -> bool` uses `pwd_context.verify(...)`.
+- Seeded passwords will be hashed before being saved in the database.
+
+### 4. Seed Data Details
+We will seed exactly 4 unique, realistic dummy users:
+1. **Alice Vance** (`alice.vance@example.com`, password: `securepassword123`, `is_employed=True`)
+2. **Bob Miller** (`bob.miller@example.com`, password: `employeebob456`, `is_employed=False`)
+3. **Charlie Smith** (`charlie.smith@example.com`, password: `charliepass789`, `is_employed=True`)
+4. **Diana Prince** (`diana.prince@example.com`, password: `wonderwoman2026`, `is_employed=False`)
+
+### 5. Idempotent / Re-runnable Seed Script
+To ensure safety on repeated execution:
+- Before inserting any user, the script executes `select(User).where(User.email == user_data.email)`.
+- If the user exists, it skips addition and logs `[Skip] User with email {email} already exists`.
+- If not, it hashes the password, instantiates the `User`, and calls `session.add()`.
+- Finally, it commits the changes.
+
+### 6. Assumptions and Decisions
+- **Dependency Tooling**: We assume `uv` is the package manager because `uv.lock` is present, so we will use it to add `passlib` and `bcrypt`.
+- **Database Location**: We will use `sqlite:///database.db` relative to the root directory.
+- **Separation of Concerns**: We choose to create a separate `app/security.py` file to handle hashing logic cleanly and make it reusable for future login/signup flows.
+
 ## Tech Requirements
 - **ORM**: SQLModel (not raw SQLAlchemy, not Pydantic-only models)
 - **Database**: SQLite, stored as a local file, e.g. `database.db`
@@ -83,11 +125,11 @@ app/
 - Query the table(s) (a quick throwaway script or `sqlite3 database.db "SELECT * FROM <table>;"`) and confirm the dummy rows are present with correct types.
 
 ## Deliverables
-- [ ] `app/models.py` with table definition(s)
-- [ ] `app/database.py` with engine, session dependency, and `create_db_and_tables()`
-- [ ] `app/seed.py` that creates tables and inserts dummy data, safely re-runnable
-- [ ] `database.db` file generated and populated
-- [ ] Plan section written at the top of this file describing the schema decisions made
+- [x] `app/models.py` with table definition(s)
+- [x] `app/database.py` with engine, session dependency, and `create_db_and_tables()`
+- [x] `app/seed.py` that creates tables and inserts dummy data, safely re-runnable
+- [x] `database.db` file generated and populated
+- [x] Plan section written at the top of this file describing the schema decisions made
 
 ## Security Notes
 - Never store plain-text passwords, even for dummy/seed data. Use a hashing library such as `passlib[bcrypt]` or `bcrypt` directly.
