@@ -17,7 +17,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # print(get_password_hash("123"))
 
 
-hash_password = "$2b$12$8RYmsbf94YAUOo0Q3iQroemR69pmYoSW1KrmuBdIWd8VSjrUWSb3a"
+# hash_password = "$2b$12$8RYmsbf94YAUOo0Q3iQroemR69pmYoSW1KrmuBdIWd8VSjrUWSb3a"
 
 
-print(verify_password("talha123", hash_password))
+# print(verify_password("talha123", hash_password))

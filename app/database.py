@@ -1,10 +1,14 @@
 from pathlib import Path
 
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
-DB_PATH = Path(__file__).resolve().parent / "database.db"
-sqlite_url = "sqlite:///database.db"
-engine = create_engine(sqlite_url, echo=True, connect_args={"check_same_thread": False})
+# One absolute DB path so POST/seed/inspect all hit the same file,
+# regardless of the process working directory.
+DB_DIR = Path(__file__).resolve().parent.parent / "database"
+DB_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DB_DIR / "user.db"
+
+engine = create_engine(f"sqlite:///{DB_PATH.as_posix()}", echo=False)
 
 
 def create_db_and_tables():
